@@ -1,0 +1,5 @@
+/home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/usbh_diskio_dma.c:64:9:USBH_initialize	1
+/home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/usbh_diskio_dma.c:76:9:USBH_status	2
+/home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/usbh_diskio_dma.c:99:9:USBH_read	11
+/home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/usbh_diskio_dma.c:161:9:USBH_write	12
+/home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/usbh_diskio_dma.c:226:9:USBH_ioctl	8

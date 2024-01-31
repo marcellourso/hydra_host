@@ -1,0 +1,11 @@
+/home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/stm32l4xx_it.c:40:6:NMI_Handler	1
+/home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/stm32l4xx_it.c:49:6:HardFault_Handler	1
+/home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/stm32l4xx_it.c:62:6:MemManage_Handler	1
+/home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/stm32l4xx_it.c:75:6:BusFault_Handler	1
+/home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/stm32l4xx_it.c:88:6:UsageFault_Handler	1
+/home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/stm32l4xx_it.c:101:6:SVC_Handler	1
+/home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/stm32l4xx_it.c:110:6:DebugMon_Handler	1
+/home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/stm32l4xx_it.c:119:6:PendSV_Handler	1
+/home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/stm32l4xx_it.c:128:6:SysTick_Handler	1
+/home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/stm32l4xx_it.c:145:6:OTG_FS_IRQHandler	1
+/home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/stm32l4xx_it.c:161:6:USART1_IRQHandler	2
