@@ -34,6 +34,8 @@ extern FATFS USBH_fatfs;
 /* User can use this section to tailor USARTx/UARTx instance used and associated
    resources */
 /* Definition for USARTx clock resources */
+
+/*-------------------------------------------------------------USARTx*/
 #define USARTx                           USART1
 #define USARTx_CLK_ENABLE()              __HAL_RCC_USART1_CLK_ENABLE();
 #define USARTx_RX_GPIO_CLK_ENABLE()      __HAL_RCC_GPIOB_CLK_ENABLE()
@@ -49,6 +51,27 @@ extern FATFS USBH_fatfs;
 #define USARTx_RX_PIN                    GPIO_PIN_7
 #define USARTx_RX_GPIO_PORT              GPIOB
 #define USARTx_RX_AF                     GPIO_AF7_USART1
+
+
+/*--------------------------------------------------------------UARTX*/
+/* Definition for UARTx clock resources */
+#define UARTx                           UART4
+#define UARTx_CLK_ENABLE()              __HAL_RCC_UART4_CLK_ENABLE();
+#define UARTx_RX_GPIO_CLK_ENABLE()      __HAL_RCC_GPIOA_CLK_ENABLE()
+#define UARTx_TX_GPIO_CLK_ENABLE()      __HAL_RCC_GPIOA_CLK_ENABLE()
+
+#define UARTx_FORCE_RESET()             __HAL_RCC_UART4_FORCE_RESET()
+#define UARTx_RELEASE_RESET()           __HAL_RCC_UART4_RELEASE_RESET()
+
+/* Definition for UARTx Pins */
+#define UARTx_TX_PIN                    GPIO_PIN_0
+#define UARTx_TX_GPIO_PORT              GPIOA
+#define UARTx_TX_AF                     GPIO_AF8_UART4
+#define UARTx_RX_PIN                    GPIO_PIN_1
+#define UARTx_RX_GPIO_PORT              GPIOA
+#define UARTx_RX_AF                     GPIO_AF8_UART4
+
+
 
 #endif /* __MAIN_H */
 

@@ -20,7 +20,10 @@
 #include "main.h"
 #include "string.h"
 #include "stm32l4xx_hal.h"
+#include "stm32l4xx_hal_rtc.h" // Includi il file di intestazione per il RTC
+#include "stm32l4xx_hal_rtc.c"
 
+#define HAL_RTC_MODULE_ENABLED
 
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,6 +35,9 @@ FIL MyFile;                   /* File object */
 char USBDISKPath[4];          /* USB Host logical drive path */
 USBH_HandleTypeDef hUSBHost; /* USB Host handle */
 
+RTC_HandleTypeDef hrtc;
+
+
 typedef enum {
   APPLICATION_IDLE = 0,
   APPLICATION_START,
@@ -40,7 +46,7 @@ typedef enum {
 
 MSC_ApplicationTypeDef Appli_state = APPLICATION_IDLE;
 UART_HandleTypeDef UartHandle;
-
+UART_HandleTypeDef Uart4Handle;
 
 
 /* Private function prototypes -----------------------------------------------*/
@@ -55,8 +61,8 @@ UART_HandleTypeDef UartHandle;
 #define RX_BUFFER_SIZE 4096
 #define TX_BUFFER_SIZE 1024
 
-
 static void SystemClock_Config(void);
+static void MX_RTC_Init(void);
 static void Error_Handler(const char*);
 static void USBH_UserProcess(USBH_HandleTypeDef *phost, uint8_t id);
 void MSC_Application(const uint8_t*,const TCHAR*);
@@ -72,7 +78,8 @@ uint8_t *data;
 char SN[10];
 int buf_index;
 int buf_size;
-const char* header = "Rec,DInizio,HInizio,DEND,hEND,Ciclo,NFiltro,Linea,DPwrDown,LeakTest,SpanTest,VolIngr,VolStd,PercTEff,TExtMin,TExtMed,TExtMax,TFiltMin,TFiltMed,TFiltMax,PAtmMin,PAtmMed,PAtmMax,CoeffVPort,CadPIniz,CadPMed,CadPMax,ValDTMax,DataDTMax,OraDTMax,TSSDTMax,ValDTMed,BitAtten\r";
+int txflag;
+const char* header = "Rec,DInizio,DEND,Ciclo,NFiltro,Linea,DPwrDown,LeakTest,SpanTest,VolIngr,VolStd,PercTEff,TExtMin,TExtMed,TExtMax,TFiltMin,TFiltMed,TFiltMax,PAtmMin,PAtmMed,PAtmMax,FlowRSD,InPDrop,CadPFin,CadPMax,DTMax,DataDTMax,OraDTMax,Time_dt>5,DTMed,Warning\r";
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -91,6 +98,11 @@ int main(void)
      */
   HAL_Init();
 
+  MX_RTC_Init();
+
+  // Imposta la data e l'ora
+  //    RTC_DateTypeDef sDate;
+  //    RTC_TimeTypeDef sTime;
 
     tx_buff[0] = 0x34;
     tx_buff[1] = 0x34;
@@ -100,9 +112,11 @@ int main(void)
 
     SN[0] = '\0';
     data = NULL;
+    txflag=0;
 
   /* Configure the system clock to 80 MHz */
   SystemClock_Config();
+  //MX_RTC_Init();
 
   /* Enable Power Clock*/
   __HAL_RCC_PWR_CLK_ENABLE();
@@ -125,17 +139,27 @@ int main(void)
   UartHandle.Init.HwFlowCtl  = UART_HWCONTROL_NONE;
   UartHandle.Init.Mode       = UART_MODE_TX_RX;
 
+  Uart4Handle.Instance        = UARTx;
+  Uart4Handle.Init.BaudRate   = 19200;
+  Uart4Handle.Init.WordLength = UART_WORDLENGTH_8B;
+  Uart4Handle.Init.StopBits   = UART_STOPBITS_1;
+  Uart4Handle.Init.Parity     = UART_PARITY_NONE;
+  Uart4Handle.Init.HwFlowCtl  = UART_HWCONTROL_NONE;
+  Uart4Handle.Init.Mode       = UART_MODE_TX_RX;
 
-
-  if (HAL_UART_Init(&UartHandle) != HAL_OK)
+  if (HAL_UART_Init(&UartHandle) != HAL_OK || HAL_UART_Init(&Uart4Handle) != HAL_OK)
   {
     /* Initialization Error */
-    Error_Handler("uart init error");
+    Error_Handler("uart or usart init error");
   }
 
   // HAL_UART_Receive_IT(&UartHandle, rxBuffer, 1); //interrupt serial
 
   initRxBuffer();
+
+  //HAL_UART_Transmit(&Uart4Handle, "prova", 5, 0xFFFF);
+  //USBH_UsrLog("VAFFA");
+
 
   /* Enable USB power on Pwrctrl CR2 register */
   HAL_PWREx_EnableVddUSB();
@@ -165,13 +189,15 @@ int main(void)
     	//const uint8_t myText[] = "demo write";
     	//const TCHAR* filename = _T("H0346");
     	//MSC_Application(myText,filename);
-    	tx_buff[0] = 0x34;
-    	tx_buff[1] = 0x34;
-    	tx_buff[3] = 0x0D;
-    	//HAL_UART_Transmit(&UartHandle, tx_buff, 3, 0xFFFF);
+    	//USBH_UsrLog("started!\n");
+
+    	HAL_UART_Transmit(&Uart4Handle, tx_buff, 3, 0xFFFF);
+    	txflag=1;
+    	//USBH_UsrLog("started with flag %d\n",txflag);
        Appli_state = APPLICATION_IDLE;
        break;
       case APPLICATION_IDLE:
+
     	  break;
 
      default:
@@ -179,70 +205,9 @@ int main(void)
     	 break;
       }
 
-     //Simula la ricezione dei dati
-//         const char *testDataSN = "=CAL,123,456,789\rAnotherMessage\r.\r=CAL,987\r";
-//         const char *testDataST = "0003,20/05/04,19:00,21/05/04,19:00,0004,0004,A,00:00,20.05,+00.4,013.711,012.568,100.0,296.7,297.6,298.1,298.6,299.2,299.3,101.1,101.1,101.3,00.6,08.0,08.3,50.2,+02.0,20/05/04,20:00,000:00,+04.5,000000000\n\r0003,20/05/04,19:00,21/05/04,19:00,0004,0004,A,00:00,20.05,+00.4,013.711,012.568,100.0,296.7,297.6,298.1,298.6,299.2,299.3,101.1,101.1,101.3,00.6,08.0,08.3,50.2,+02.0,20/05/04,20:00,000:00,+04.5,000000000\r.\r";
-           //const char *testDataSC = "=SN0000\r0000,01/01/** 18:25,01/01/** 18:35,0001,0001,A,00:00,00.00,+00.0,000.000,000.000,093.7,293.0,293.9,294.9,295.0,296.0,296.9,101.0,101.2,101.5,23.2,00.0,05.1,08.3,003.7,01/01/** 18:33,000:00,+02.0,055.0,0000C004\r0001,01/01/** 18:25,01/01/** 18:35,0001,0001,B,00:00,00.00,+00.0,000.000,000.000,094.0,293.0,293.9,294.9,295.0,296.0,296.9,101.0,101.2,101.5,23.2,00.0,00.6,08.3,003.9,01/01/** 18:34,000:00,+02.0,055.0,0000C004\r0002,01/01/** 18:35,01/01/** 18:45,0002,0002,A,00:00,00.00,+00.0,000.000,000.000,089.5,293.0,293.9,294.9,295.0,296.0,296.9,101.0,101.2,101.5,23.2,00.0,01.6,08.4,003.7,01/01/** 18:41,000:00,+02.0,055.1,0000C004\r0003,01/01/** 18:35,01/01/** 18:45,0002,0002,B,00:00,00.00,+00.0,000.000,000.000,090.5,293.0,293.9,294.9,295.0,296.0,296.9,101.0,101.2,101.5,23.2,00.0,06.4,08.4,003.8,01/01/** 18:40,000:00,+02.0,055.1,0000C004\r0004,01/01/** 18:45,01/01/** 18:55,0003,0003,A,00:00,00.00,+00.0,000.000,000.000,088.7,293.0,294.0,294.9,295.0,295.9,296.9,101.0,101.3,101.5,23.2,00.0,01.8,08.5,003.7,01/01/** 18:49,000:00,+01.9,055.0,0000C004\r0005,01/01/** 18:45,01/01/** 18:55,0003,0003,B,00:00,00.00,+00.0,000.000,000.000,089.3,293.0,294.0,294.9,295.0,296.0,296.9,101.0,101.3,101.5,23.2,00.0,01.7,08.4,003.7,01/01/** 18:49,000:00,+01.9,055.0,0000C004\r0006,01/01/** 18:55,01/01/** 19:05,0004,0004,A,00:00,00.00,+00.0,000.000,000.000,079.3,293.0,293.9,294.9,295.0,295.9,296.9,101.0,101.3,101.5,23.1,00.0,05.0,08.3,003.7,01/01/** 18:59,000:00,+01.9,054.8,0000C004\r0007,01/01/** 18:55,01/01/** 19:05,0004,0004,B,00:00,00.00,+00.0,000.000,000.000,079.7,293.0,293.9,294.9,295.0,295.9,296.9,101.0,101.3,101.5,23.1,00.0,00.6,08.5,003.8,01/01/** 19:02,000:00,+01.9,054.8,0000C004\r\r\r\r\r";
-//         //	 const char *ptr = strstr(testDataST, "\r.\r");
 
-//       for (size_t i = 0; i < strlen(testDataSC); ++i) {
-//
-//        	 rxBuffer[buf_index++] = testDataSC[i];
-//            rxBuffer[buf_index] = '\0';
-//
-//
-//           if (strstr(rxBuffer, "\r\r\r\r\r")) {
-//
-//      		// USBH_UsrLog("Sequenza '\r\r\r\r\r' trovata fino alla posizione %d",i);
-//
-//
-//              //USBH_UsrLog("buffer completo: %s",testDataSC);
-//
-//              	  	  // Estrai SN
-//            	       char *startSN = strchr(rxBuffer, '=') + 1;
-//            	       if (startSN != NULL) {
-//            	           char *endSN = strchr(startSN, '\r');
-//            	           if (endSN != NULL && (endSN - startSN < sizeof(SN))) {
-//            	               strncpy(SN, startSN, endSN - startSN);
-//            	               SN[endSN - startSN] = '\0';  // Termina correttamente la stringa SN
-//            	           }
-//            	       }
-//
-//            	       // Estrai data
-//            	       char *startData = strchr(rxBuffer, '\r') + 1;  // Inizio dei dati dopo il primo '\r'
-//            	       if (startData != NULL) {
-//            	           char *endData = strstr(startData, "\r\r\r\r\r");  // Fine dei dati prima dei cinque '\r'
-//            	           if (endData != NULL) {
-//            	               size_t dataSize = endData - startData;
-//            	               data = (char *)malloc(dataSize + 1);  // Alloca memoria per i dati
-//            	               if (data != NULL) {
-//            	                   strncpy(data, startData, dataSize);
-//            	                   data[dataSize] = '\0';  // Termina correttamente la stringa data
-//            	               }
-//            	           }
-//            	       }
-//
-//
-//            	       // Reset del buffer dopo l'elaborazione
-//            	       memset(rxBuffer, 0, RX_BUFFER_SIZE);
-//            	       buf_index = 0;
-//
-//            	       USBH_UsrLog("serial: %s\nDATA:%s",SN,data);
-//
-//            	       // Ora puoi utilizzare SN e data come necessario
-//            	       // Ricorda di liberare la memoria allocata per data qui
-//
-//
-//      	         	            	    return 0;
-//
-//       	         	                            }
-//
-//        }
+     if (UARTx->ISR & USART_ISR_RXNE) {  // se c'è un carattere in arrivo dalla seriale
 
-
-
-
-     if (USARTx->ISR & USART_ISR_RXNE) {
 
     	 // Controlla e ridimensiona il buffer se necessario
     	                          if (buf_index >= buf_size - 1) { // Lascia spazio per '\0'
@@ -256,73 +221,14 @@ int main(void)
     	                              rxBuffer = newBuffer;
     	                          }
 
-
-         sdata = (uint8_t)(USARTx->RDR); // Leggi un byte dal buffer di ricezione di USARTx
+         sdata = (uint8_t)(UARTx->RDR); // Leggi un byte dal buffer di ricezione di USARTx
          rxBuffer[buf_index++] = sdata;
          rxBuffer[buf_index] = '\0';
 
+                    if ((strstr(rxBuffer, "\r\r\r") != NULL)) {
 
-
-         //HAL_UART_Transmit(&UartHandle, &sdata, 1, 0xFFFF);
-         //HAL_UART_Transmit(&UartHandle, &lf, 1, 0xFFFF);
-         //HAL_UART_Transmit(&UartHandle, rxBuffer,buf_index, 0xFFFF);
-//       if ((strstr(rxBuffer, "=CAL") != NULL) && (rxBuffer[buf_index-1] == '\r')) {
-//
-//        	         char* token = strtok((char *)rxBuffer, ",");
-//        	         int field_count = 0;
-//        	         while (token != NULL) {
-//        	             field_count++;
-//        	             if (field_count == 4) {
-//        	                 // Assumi che SN sia definita e abbastanza grande da contenere il token
-//        	                 sprintf(SN, "H%s", token);
-//        	                 USBH_UsrLog(SN); // Modificato per loggare direttamente il token
-//        	                 memset(rxBuffer, 0, buf_size);  // Reset del buffer dopo l'elaborazione
-//        	                 buf_index = 0;
-//        	                 break;
-//        	             }
-//        	             token = strtok(NULL, ",");
-//        	          }
-//
-//        	        }
-//
-//         // Controlla se la stringa finisce per "\r.\r"
-//           else if (strstr(rxBuffer, "\r.\r") && (rxBuffer[buf_index-1] == '\r') ) {
-//
-//        	   //USBH_UsrLog("buffer: %s",rxBuffer);
-//
-//
-//        		 // Calcola la dimensione del buffer finale
-//        	            	     int bufferSize = sizeof(header) + sizeof(rxBuffer);
-//
-//        	            	     // Alloca il buffer per la stringa finale
-//        	            	     char *finalString = (char *)malloc(bufferSize);
-//        	            	     if (finalString == NULL) {
-//        	            	         // Gestione dell'errore di allocazione della memoria
-//        	            	    	 USBH_UsrLog("null final");
-//        	            	         return;
-//        	            	     }
-//
-//        	            	     // Inizializza il buffer con la stringa dell'header
-//        	            	     strcpy(finalString, header);
-//
-//        	            	     // Aggiungi la stringa di dati esistenti
-//        	            	     strcat(finalString, rxBuffer);
-//        	            	     USBH_UsrLog(finalString);
-//
-//        	            	     // Libera la memoria allocata per finalString una volta che non è più necessaria
-//        	            	     free(finalString);
-//
-//        	            	     // Reset del buffer e dell'indice dopo l'elaborazione
-//        	            	     memset(rxBuffer, 0, RX_BUFFER_SIZE);
-//        	            	     buf_index = 0;
-//
-//        	                            }
-
-           if ((strstr(rxBuffer, "\r\r\r") != NULL)) {
-
-        	  // USBH_UsrLog("terminatore trovato, stringa: %s",rxBuffer);
-        	   //return;
-
+        	   //USBH_UsrLog("terminatore trovato, stringa: %s",rxBuffer);
+        	   txflag=0;
 
         	   // Estrai SN
         	       char *startSN = strchr(rxBuffer, '=') + 1;
@@ -331,27 +237,25 @@ int main(void)
         	           if (endSN != NULL && (endSN - startSN < sizeof(SN))) {
         	               strncpy(SN, startSN, endSN - startSN);
         	               SN[endSN - startSN] = '\0';  // Termina correttamente la stringa SN
-        	               //char SN_with_extension[64]; // Assicurati che sia abbastanza grande per contenere SN + ".csv" + carattere nullo
-        	               //sprintf(SN_with_extension, "%s.csv", SN); // Concatena ".csv" a SN e memorizza il risultato in SN_with_extension
+
         	           }
         	       }
 
-
-
         	       // Estrai data
-        	       char *startData = strchr(rxBuffer, '\r') + 1;  // Inizio dei dati dopo il primo '\r'
+        	       //char *startData = strchr(rxBuffer, '\r') + 1;  // Inizio dei dati dopo il primo '\r'
+        	       char *startData = startSN + 8; // Inizio dei dati dopo il numero seriale (8 caratteri)
         	       if (startData != NULL) {
-        	           char *endData = strstr(startData, "\r\r\r");  // Fine dei dati prima dei cinque '\r'
+        	           char *endData = strstr(startData, "\r\r\r");  // Fine dei dati prima dei tre '\r'
         	           if (endData != NULL) {
         	               size_t dataSize = endData - startData;
         	               data = (char *)malloc(dataSize + 1);  // Alloca memoria per i dati
         	               if (data != NULL) {
         	                   strncpy(data, startData, dataSize);
         	                   data[dataSize] = '\0';  // Termina correttamente la stringa data
+        	                   USBH_UsrLog("data: %s",data);
         	               }
         	           }
         	       }
-
 
         	       int bufferSize = strlen(header) + strlen((char *)data) + 1; // +1 per '\0'
 
@@ -365,31 +269,27 @@ int main(void)
         	             // Costruisci la stringa finale
         	             strcpy(finalString, header);
         	             strcat(finalString, (char *)data);
-        	             //USBH_UsrLog(finalString);
-
+        	             USBH_UsrLog("final: %s",finalString);
+        	             USBH_UsrLog("SN: %s",SN);
 
         	       // Reset del buffer dopo l'elaborazione
         	       memset(rxBuffer, 0, RX_BUFFER_SIZE);
         	       buf_index = 0;
 
         	       strcat(SN,".csv");
-        	       USBH_UsrLog("serial:%s\nDATA:%s\nFinal:%s",SN,data,finalString);
+        	       //USBH_UsrLog("serial:%s\nDATA:%s\nFinal:%s",SN,data,finalString);
         	       MSC_Application(finalString,SN);
 
         	       free(finalString); // libera la memoria allocata
    	               free(data);  // libera la memoria allocata
+   	               SN[0] = '\0';
 
 
-
-        	       //return;
-
-        	       // Ora puoi utilizzare SN e data come necessario
-        	       // Ricorda di liberare la memoria allocata per data qui
-
-
-        	   } // end data end reached
+        	   } // end data reached
 
        } // end char received
+
+
 
     } // end infinite loop
 
@@ -466,15 +366,16 @@ void MSC_Application(const uint8_t* wtext,const TCHAR* path){
 	              f_close(&MyFile);
 
 	              /* Compare read data with the expected data */
-	              if((bytesread != byteswritten))
-	              {
-	                /* Read data is different from the expected data */
-	                Error_Handler("compare read error");
-	              }
-	              else
+//	              if((bytesread != byteswritten))
+//	              {
+//	                /* Read data is different from the expected data */
+//	                //Error_Handler("compare read error");
+//	              }
+//	              else
 	              {
 	                /* Success of the demo: no error occurrence */
 	                USBH_UsrLog ("Success data writing");
+	                USBH_UsrLog ("\nflag: %d",txflag);
 	              }
 	            }
 	          }
@@ -671,14 +572,63 @@ static void SystemClock_Config(void)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 
-	if (huart->Instance == USART1) {USBH_UsrLog ("one char on handle");}
+	// if (huart->Instance == USART1) {USBH_UsrLog ("one char on handle");}
 
-	HAL_UART_Receive_IT(&UartHandle,rxBuffer,1);
+	// HAL_UART_Receive_IT(&UartHandle,rxBuffer,1);
 
 }
 
+static void MX_RTC_Init(void){
 
+	 RTC_TimeTypeDef sTime = {0};
+	 RTC_DateTypeDef sDate = {0};
 
+	 /** Attiva l'orologio LSE */
+	    __HAL_RCC_LSE_CONFIG(RCC_LSE_ON);
+	    while (__HAL_RCC_GET_FLAG(RCC_FLAG_LSERDY) == RESET)
+	    {
+	    }
+
+	    hrtc.Instance = RTC;
+	       hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
+	       hrtc.Init.AsynchPrediv = 127;
+	       hrtc.Init.SynchPrediv = 255;
+	       hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
+	       hrtc.Init.OutPutRemap = RTC_OUTPUT_REMAP_NONE;
+	       hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
+	       hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
+
+	      /*if (HAL_RTC_Init(&hrtc) != HAL_OK)
+	          {
+	              Error_Handler("RTC_INIT error");
+	          }*/
+
+	       /** Inizializzazione data */
+	           sDate.WeekDay = RTC_WEEKDAY_MONDAY;
+	           sDate.Month = RTC_MONTH_JANUARY;
+	           sDate.Date = 1;
+	           sDate.Year = 0;
+
+	          /* if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
+	              {
+	                  Error_Handler();
+	              }*/
+
+	              /** Inizializzazione ora */
+	              sTime.Hours = 0;
+	              sTime.Minutes = 0;
+	              sTime.Seconds = 0;
+	              sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+	              sTime.StoreOperation = RTC_STOREOPERATION_RESET;
+
+	           /*  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
+	              {
+	                  Error_Handler("set time error");
+	              }*/
+
+	          //    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, 0x32F2); // Valore di backup arbitrario
+
+}
 
 
 /**

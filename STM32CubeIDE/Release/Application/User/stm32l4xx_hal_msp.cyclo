@@ -1,2 +1,2 @@
 /home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/stm32l4xx_hal_msp.c:50:6:HAL_UART_MspInit	1
-/home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/stm32l4xx_hal_msp.c:89:6:HAL_UART_MspDeInit	1
+/home/marcello/STM32CubeIDE/workspace_1.13.1/STM32CubeL4/Projects/B-L475E-IOT01A/Applications/USB_Host/MSC_Standalone/Src/stm32l4xx_hal_msp.c:118:6:HAL_UART_MspDeInit	1

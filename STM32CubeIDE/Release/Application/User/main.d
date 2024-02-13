@@ -48,7 +48,9 @@ Application/User/main.o: \
  ../../../../../../../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h \
  ../../../../../../../Middlewares/Third_Party/FatFs/src/diskio.h \
  ../../../../../../../Middlewares/Third_Party/FatFs/src/ff.h \
- ../../Inc/usbh_diskio_dma.h
+ ../../Inc/usbh_diskio_dma.h \
+ ../../../../../../../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rtc.h \
+ ../../../../../../../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rtc_ex.h
 ../../Inc/main.h:
 ../../../../../../../Middlewares/ST/STM32_USB_Host_Library/Core/Inc/usbh_core.h:
 ../../Inc/usbh_conf.h:
@@ -98,3 +100,5 @@ Application/User/main.o: \
 ../../../../../../../Middlewares/Third_Party/FatFs/src/diskio.h:
 ../../../../../../../Middlewares/Third_Party/FatFs/src/ff.h:
 ../../Inc/usbh_diskio_dma.h:
+../../../../../../../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rtc.h:
+../../../../../../../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rtc_ex.h:

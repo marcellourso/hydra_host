@@ -41,6 +41,8 @@ void HAL_HCD_MspInit(HCD_HandleTypeDef *hhcd)
 {
   GPIO_InitTypeDef  GPIO_InitStruct;
 
+
+
   /* Configure USB FS GPIOs */
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
@@ -64,6 +66,8 @@ void HAL_HCD_MspInit(HCD_HandleTypeDef *hhcd)
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(USBOTG_PPWR_GPIO_PORT, &GPIO_InitStruct);
+
+
 
   /* Enable USB FS Clocks */
   __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
